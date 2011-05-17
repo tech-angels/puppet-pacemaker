@@ -1,0 +1,32 @@
+# Managed by Puppet
+
+# What UDP port to use for bcast/ucast communication?
+udpport 694
+
+# Autojoin
+autojoin <%= autojoin %>
+
+# whether to logd file for logging conf
+use_logd <%= use_logd %>
+
+# Facility to use for syslog()/logger
+logfacility     local0
+
+# keepalive: how long between heartbeats?
+keepalive <%= keepalive %>
+
+# deadtime: how long-to-declare-host-dead?
+deadtime <%= deadtime %>
+
+# warntime: how long before issuing "late heartbeat" warning?
+warntime <%= warntime %>
+
+# Very first dead time (initdead)
+initdead <%= initdead %>
+
+# Compression
+compression <%= compression %>
+
+# Start pacemaker
+crm yes
+

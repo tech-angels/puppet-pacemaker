@@ -3,177 +3,142 @@ import "stonith.pp"
 import "ip.pp"
 
 define ha::authkey($method, $key="") {
-    if($method == "crc") {
-        $changes = ["set ${name}/method ${method}"]
-    } else {
-        $changes = ["set ${name}/method ${method}", "set ${name}/key ${key}"]
-    }
-
-    augeas { "Setting /etc/ha.d/authkeys/${name}":
-        changes => $changes,
-        context => "/files/etc/ha.d/authkeys",
+    file {
+      '/etc/ha.d/authkeys':
+        owner	=> 'root',
+        group	=> 'root',
+        mode	=> 0400,
+        content	=> "# Managed by Puppet\nauth 1\n1 $method $key\n";
     }
 }
 
-define ha::node($autojoin="any", $use_logd="on", $compression="bz2",
-                $keepalive="1", $warntime="5", $deadtime="10", $initdead="60", $authkey,
-                $alert_email_address) {
+define ha::heartbeat::conf(
+$autojoin="any",
+$use_logd="on",
+$compression="bz2",
+$keepalive="1",
+$warntime="5",
+$deadtime="10",
+$initdead="60"
+) {
 
-    Augeas { context => "/files/etc/ha.d/ha.cf" }
+  # Configure ha.cf
+  common::concatfilepart {
+    "ha.cf-0":
+      file	=> '/etc/ha.d/ha.cf', 
+      manage	=> true,
+      content	=> template('pacemaker/ha.cf.erb'),
+      notify	=> Service['heartbeat'];
+  }
+ 
 
-    $email_content = "Heartbeat config on ${fqdn} has changed."
-
-    case $operatingsystem {
-        RedHat,CentOS: {
-            case $operatingsystemrelease {
-                5: {
-                    package {
-                        "pacemaker":
-                            ensure  => "1.0.4-23.1",
-                            require => Package["heartbeat"];
-                        "heartbeat":
-                            ensure => "2.99.2-8.1";
-                    }
-                }
-            }
+  case $operatingsystem {
+    RedHat,CentOS: {
+      case $operatingsystemrelease {
+        5: {
+          package {
+            "pacemaker":
+              ensure  => "1.0.4-23.1",
+              require => Package["heartbeat"];
+            "heartbeat":
+              ensure => "2.99.2-8.1";
+          }
         }
-        Debian,Ubuntu: {
-            package {
-                "pacemaker":
-                    ensure  => installed,
-                    require => Package["heartbeat"];
-                "heartbeat":
-                    ensure => installed;
-                "openais":
-                    ensure => purged;
-            }
-        }
+      }
     }
-
-    case $operatingsystem {
-        # RHEL packages have this service bundled in with the heartbeat
-        # packages.
-        Debian,Ubuntu: {
-            service {
-                "logd":
-                    ensure    => running,
-                    hasstatus => true,
-                    enable    => true,
-                    require   => [Package["pacemaker"], Package["heartbeat"]];
-            }
-        }
-    }
-    service {
+    Debian,Ubuntu: {
+      package {
+        "pacemaker":
+          ensure  => installed,
+          require => Package["heartbeat"];
         "heartbeat":
-            ensure    => running,
-            hasstatus => true,
-            enable    => true,
-            require   => [Package["pacemaker"], Package["heartbeat"]];
+          ensure => installed;
+        "openais":
+          ensure => purged;
+      }
     }
+  }
 
-    file {
-        "/etc/ha.d/authkeys":
-            ensure => present,
-            mode   => 0600;
+  case $operatingsystem {
+    # RHEL packages have this service bundled in with the heartbeat
+    # packages.
+    Debian,Ubuntu: {
+      service {
+        "logd":
+          ensure    => running,
+          hasstatus => true,
+          enable    => true,
+          require   => [Package["pacemaker"], Package["heartbeat"]];
+        }
+      }
+  }
+  service {
+    "heartbeat":
+      ensure    => running,
+      hasstatus => true,
+      enable    => true,
+      require   => [Package["pacemaker"], Package["heartbeat"]];
+  }
 
-        # logd config, it's very simple and can be the same everywhere
-        "/etc/logd.cf":
-            ensure => present,
-            mode   => 0440,
-            owner  => "root",
-            group  => "root",
-            source => "puppet:///ha/etc/logd.cf";
+  file {
+    # logd config, it's very simple and can be the same everywhere
+    "/etc/logd.cf":
+      ensure => present,
+      mode   => 0440,
+      owner  => "root",
+      group  => "root",
+      source => "puppet:///pacemaker/etc/logd.cf";
+  }
         
-        # Augeas lenses
-        "/usr/share/augeas/lenses/hacf.aug":
-            ensure => present,
-            mode   => 0444,
-            owner  => "root",
-            group  => "root",
-            source => "puppet:///ha/usr/share/augeas/lenses/hacf.aug";
-        "/usr/share/augeas/lenses/haauthkeys.aug":
-            ensure => present,
-            mode   => 0444,
-            owner  => "root",
-            group  => "root",
-            source => "puppet:///ha/usr/share/augeas/lenses/haauthkeys.aug";
-    }
+  # Create node in ha.cf for all nodes
+  @@ha::node_entry {
+    $name:
+      address	=> $ipaddress;
+  } 
 
-    augeas {
-        "Setting /files/etc/ha.d/ha.cf/port":
-            notify  => Exec["restart-email"],
-            changes => "set udpport 694";
-        "Setting /files/etc/ha.d/ha.cf/autojoin":
-            notify  => Exec["restart-email"],
-            changes => "set autojoin ${autojoin}";
-        "Setting /files/etc/ha.d/ha.cf/use_logd":
-            notify  => Exec["restart-email"],
-            changes => "set use_logd ${use_logd}";
-        "Setting /files/etc/ha.d/ha.cf/traditional_compression":
-            notify  => Exec["restart-email"],
-            changes => "set traditional_compression off";
-        "Setting /files/etc/ha.d/ha.cf/compression":
-            notify  => Exec["restart-email"],
-            changes => "set compression ${compression}";
-        "Setting /files/etc/ha.d/ha.cf/keepalive":
-            notify  => Exec["restart-email"],
-            changes => "set keepalive ${keepalive}";
-        "Setting /files/etc/ha.d/ha.cf/warntime":
-            notify  => Exec["restart-email"],
-            changes => "set warntime ${warntime}";
-        "Setting /files/etc/ha.d/ha.cf/deadtime":
-            notify  => Exec["restart-email"],
-            changes => "set deadtime ${deadtime}";
-        "Setting /files/etc/ha.d/ha.cf/initdead":
-            notify  => Exec["restart-email"],
-            changes => "set initdead ${initdead}";
-        "Setting /files/etc/ha.d/ha.cf/crm":
-            notify  => Exec["restart-email"],
-            changes => "set crm yes";
-        "Setting /files/etc/ha.d/authkeys/auth":
-            context => "/files/etc/ha.d/authkeys",
-            changes => "set auth ${authkey}",
-            before  => Ha::Authkey[$authkey],
-            notify  => Exec["restart-email"];
-    }
+  # Collect nodes
+  Ha::Node_entry<<| |>>
+}
 
-    exec { "Send restart email":
-        alias       => "restart-email",
-        command     => "/bin/echo \"${email_content}\" | /usr/bin/mail -s \"Heartbeat restart required\" ${alert_email_address}",
-        refreshonly => true,
+define ha::node_entry($port='694', $address) {
+  common::concatfilepart {
+    "ha.cf-8-node-$name":
+      file	=> '/etc/ha.d/ha.cf', 
+      manage	=> true,
+      content	=> "node ${name}\n",
+      notify	=> Service['heartbeat'];
+  }
+ 
+  if $pacemaker_shorewall_rules {
+    # Allow udp traffic from node
+    shorewall::rule {
+      "Allow heartbeat traffic from $name":
+        source            => "net:$address",
+        destination       => '$FW',
+        destinationport   => $port,
+        proto             => 'udp',
+        action            => 'ACCEPT',
+        order             => '200';
     }
+  }
 }
 
 define ha::mcast($group, $port=694, $ttl=1) {
-    augeas { "Configure multicast group on ${name}":
-        context => "/files/etc/ha.d/ha.cf",
-        changes => [
-                    "set mcast[last()+1]/interface ${name}",
-                    "set mcast[last()]/group ${group}",
-                    "set mcast[last()]/port ${port}",
-                    "set mcast[last()]/ttl ${ttl}",
-                   ],
-        onlyif  => "match mcast/interface[.='${name}'] size == 0",
-    }
-    
-    augeas { "Disable broadcast on ${name}":
-        context => "/files/etc/ha.d/ha.cf",
-        changes => "rm bcast"
-    }
+  common::concatfilepart {
+    "ha.cf-8-mcast-$name":
+      file	=> '/etc/ha.d/ha.cf', 
+      manage	=> true,
+      content	=> "mcast ${interface} ${group} ${port} ${ttl} 0\n",
+      notify	=> Service['heartbeat'];
+  }
 }
 
 define ha::ucast($dev ) {
-    augeas { "Configure unicast peer ${name}":
-        context => "/files/etc/ha.d/ha.cf",
-        changes => [
-                    "set ucast[last()+1]/interface ${dev}",
-                    "set ucast[last()]/peer ${name}",
-                   ],
-        onlyif  => "match ucast/interface[.='${dev}'] size == 0",
-    }
-    
-    augeas { "Disable broadcast on ${dev}":
-        context => "/files/etc/ha.d/ha.cf",
-        changes => "rm bcast"
-    }
+  common::concatfilepart {
+    "ha.cf-8-ucast-$name":
+      file	=> '/etc/ha.d/ha.cf', 
+      manage	=> true,
+      content	=> "ucast ${dev} ${name}\n",
+      notify	=> Service['heartbeat'];
+  }
 }
