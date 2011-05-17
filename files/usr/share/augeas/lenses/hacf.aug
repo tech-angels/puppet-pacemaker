@@ -16,8 +16,13 @@ module Hacf =
                         . [ label "ttl" . store /[0-9]+/ ] . ws
                         . Util.del_str "0" . eol 
                     ]
+  let ucast_entry = [ label "ucast" . Util.del_str "ucast" . ws 
+                        . [ label "interface" . store /[a-zA-Z0-9\.]+/ ] . ws
+                        . [ label "peer" . store /[0-9\.]+/ ] . eol
+                    ]
 
-  let lns = (comment|empty|mcast_entry|generic_entry)*
+
+  let lns = (comment|empty|mcast_entry|ucast_entry|generic_entry)*
 
   let filter      = Util.stdexcl
                     . incl "/etc/ha.d/ha.cf"

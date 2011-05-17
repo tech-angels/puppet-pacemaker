@@ -1,4 +1,4 @@
-import "primitive.pp"
+import "crm/primitive.pp"
 import "stonith.pp"
 import "ip.pp"
 
@@ -40,10 +40,10 @@ define ha::node($autojoin="any", $use_logd="on", $compression="bz2",
         Debian,Ubuntu: {
             package {
                 "pacemaker":
-                    ensure  => "1.0.4-1.1anchor",
+                    ensure  => installed,
                     require => Package["heartbeat"];
                 "heartbeat":
-                    ensure => "2.99.2+sles11r9-1.1anchor";
+                    ensure => installed;
                 "openais":
                     ensure => purged;
             }
@@ -157,6 +157,22 @@ define ha::mcast($group, $port=694, $ttl=1) {
     }
     
     augeas { "Disable broadcast on ${name}":
+        context => "/files/etc/ha.d/ha.cf",
+        changes => "rm bcast"
+    }
+}
+
+define ha::ucast($dev ) {
+    augeas { "Configure unicast peer ${name}":
+        context => "/files/etc/ha.d/ha.cf",
+        changes => [
+                    "set ucast[last()+1]/interface ${dev}",
+                    "set ucast[last()]/peer ${name}",
+                   ],
+        onlyif  => "match ucast/interface[.='${dev}'] size == 0",
+    }
+    
+    augeas { "Disable broadcast on ${dev}":
         context => "/files/etc/ha.d/ha.cf",
         changes => "rm bcast"
     }
