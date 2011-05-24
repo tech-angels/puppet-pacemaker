@@ -1,4 +1,4 @@
-define ha::crm::primitive($resource_type, $ensure=present, $monitor_interval, $ignore_dc="false",
+define ha::crm::primitive($resource_type, $ensure=present, $monitor_interval, $monitor_interval_slave=false, $ignore_dc="false",
     $priority="", $target_role="", $is_managed="", $resource_stickiness="", $migration_threshold="",
     $failure_timeout="", $multiple_active="") {
 
@@ -32,16 +32,24 @@ define ha::crm::primitive($resource_type, $ensure=present, $monitor_interval, $i
         fail("Invalid multiple_active passed to ${primitive_name}: Value must be either block, stop_only or stop_start")
     }
 
-    if($ha_cluster_dc == $fqdn) or ($ignore_dc == "true") {
+    if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) or ($ignore_dc == "true") {
         if($ensure == absent) {
             exec { "Removing primitive ${name}":
                 command => "/usr/sbin/crm_resource -D -r ${name} -t primitive",
                 onlyif  => "/usr/sbin/crm_resource -r ${name} -t primitive -q > /dev/null 2>&1",
             }
         } else {
-            exec { "Creating primitive ${name}":
-                command => "/usr/sbin/crm configure primitive ${name} ${resource_type} op monitor interval=\"${monitor_interval}\"",
-                unless  => "/usr/sbin/crm_resource -r ${name} -t primitive -q > /dev/null 2>&1",
+            if $monitor_interval_slave {
+                # Do different monitors for master and slave
+                exec { "Creating primitive ${name}":
+                  command => "/usr/sbin/crm configure primitive ${name} ${resource_type} op monitor role=Master interval=\"${monitor_interval}\" op monitor role=Slave interval=\"${monitor_interval_slave}\"",
+                  unless  => "/usr/sbin/crm_resource -r ${name} -t primitive -q > /dev/null 2>&1",
+                }
+            } else {
+                exec { "Creating primitive ${name}":
+                  command => "/usr/sbin/crm configure primitive ${name} ${resource_type} op monitor interval=\"${monitor_interval}\"",
+                  unless  => "/usr/sbin/crm_resource -r ${name} -t primitive -q > /dev/null 2>&1",
+                }
             }
 
             ha::crm::metaparameter { 
