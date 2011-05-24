@@ -1,18 +1,18 @@
-define ha::crm::location($ensure=present, $resource, $score, $rule = '', $host = '', $ignore_dc="false") {
-	if $rule == '' and $host == '' {
+define ha::crm::location($ensure=present, $resource, $score, $rule_id = '', $rule_expr, $host = '', $ignore_dc="false") {
+	if $rule_expr == '' and $host == '' {
 		fail("Must specify one of rule or host in Ha::Crm::Location[${name}]")
 	}
-	if $rule != '' and $host != '' {
+	if $rule_expr != '' and $host != '' {
 		fail("Only one of rule and host can be specified in Ha::Crm::Location[${name}]")
 	}
 	
-	if $rule == '' {
+	if $rule_expr == '' {
 		$loc = "${score}: ${host}"
 	} else {
-		$loc = "rule ${score}: ${rule}"
+		$loc = "rule ${rule_id} ${score}: ${rule_expr}"
 	}
 	
-	if($ha_cluster_dc == $fqdn) or ($ignore_dc == "true") {
+	if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) or ($ignore_dc == "true") {
 		if($ensure == absent) {
 			exec { "Removing location rule ${name}":
 				command => "/usr/sbin/crm configure location delete ${name}",
