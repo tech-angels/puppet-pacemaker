@@ -1,4 +1,4 @@
-import "crm/primitive.pp"
+import "crm/*.pp"
 import "stonith.pp"
 import "ip.pp"
 
@@ -92,7 +92,7 @@ $initdead="60"
         
   # Create node in ha.cf for all nodes
   @@ha::node_entry {
-    $name:
+    $hostname:
       address	=> $ipaddress;
   } 
 
