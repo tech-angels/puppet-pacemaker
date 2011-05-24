@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::ms($primitive, $master_max, $master_node_max, $clone_max, $clone_node_max, $ha_notify) {
     if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) {
         exec { "Creating master ${name} for primitive ${primitive}":

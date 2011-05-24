@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::order($score, $first_name, $first_action="", $then_name, $then_action="", $ensure = present) {
 	if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) {
 		if($first_action != "") {

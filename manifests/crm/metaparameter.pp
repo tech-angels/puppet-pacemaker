@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::metaparameter($resource, $parameter, $value, $ensure=present, $ignore_dc="false") {
     if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) or ($ignore_dc == "true") {
         if($ensure == absent) {

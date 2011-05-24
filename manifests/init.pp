@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 import "crm/*.pp"
 import "stonith.pp"
 import "ip.pp"

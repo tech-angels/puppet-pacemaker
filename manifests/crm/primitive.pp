@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::primitive($resource_type, $ensure=present, $monitor_interval, $monitor_interval_slave=false, $ignore_dc="false",
     $priority="", $target_role="", $is_managed="", $resource_stickiness="", $migration_threshold="",
     $failure_timeout="", $multiple_active="") {

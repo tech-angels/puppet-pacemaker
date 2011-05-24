@@ -50,11 +50,11 @@ appropriate type, whilst the latter requires a lot more knowledge of how
 pacemaker works, but lets you do anything you want.
 
 
-## ha_crm_property
+## ha::crm::property
 
 Set a cluster-wide (crm_config) property.
 
-    ha_crm_property { "<property name>":
+    ha::crm::property { "<property name>":
         value          => "<value>",
         ensure         => "(present|absent)",
         only_run_on_dc => "(true|false)",
@@ -62,7 +62,7 @@ Set a cluster-wide (crm_config) property.
 
 ### Example:
     
-    ha_crm_property { "stonith-enabled":
+    ha::crm::property { "stonith-enabled":
         value  => "true",
         ensure => present,
     }
@@ -77,12 +77,12 @@ Set a cluster-wide (crm_config) property.
 
 * __only_run_on_dc:__ Should Puppet only attempt to manage this resource if the node is the cluster DC (default: true)
 
-## ha_crm_primitive
+## ha::crm::primitive
 
 Create a primitive (resource).  In almost all cases, this resource will 
-require additional parameters (ha_crm_parameter) in order to function correctly.
+require additional parameters (ha::crm::parameter) in order to function correctly.
 
-    ha_crm_primitive { "<primitive name>":
+    ha::crm::primitive { "<primitive name>":
         type                => "<class>:<provider>:<type>"
         ensure              => "(present|absent)",
         only_run_on_dc      => "(true|false)",
@@ -97,7 +97,7 @@ require additional parameters (ha_crm_parameter) in order to function correctly.
 
 ### Example:
 
-    ha_crm_primitive { "fs_mysql":
+    ha::crm::primitive { "fs_mysql":
         type   => "ocf:heartbeat:Filesystem",
         ensure => present,
     }

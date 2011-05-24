@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::property($value, $ensure=present) {
     if($ha_cluster_dc == $hostname) or ($ha_cluster_dc == $fqdn) {
         if($ensure == absent) {

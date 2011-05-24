@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::location($ensure=present, $resource, $score, $rule_id = '', $rule_expr, $host = '', $ignore_dc="false") {
 	if $rule_expr == '' and $host == '' {
 		fail("Must specify one of rule or host in Ha::Crm::Location[${name}]")

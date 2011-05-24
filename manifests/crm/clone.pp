@@ -1,3 +1,5 @@
+# Modified 2011/5/24 by Gilbert Roulot
+
 define ha::crm::clone($resource, $clone_max="", $clone_node_max="", $globally_unique="",
         $ha_notify="", $ordered="", $interleave="", $ignore_dc="false", $priority="",
         $target_role="", $is_managed="", $ensure = present) {
