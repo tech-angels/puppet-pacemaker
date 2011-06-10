@@ -110,19 +110,6 @@ define ha::node_entry($port='694', $address) {
       content	=> "node ${name}\n",
       notify	=> Service['heartbeat'];
   }
- 
-  if $pacemaker_shorewall_rules {
-    # Allow udp traffic from node
-    shorewall::rule {
-      "Allow heartbeat traffic from $name":
-        source            => "net:$address",
-        destination       => '$FW',
-        destinationport   => $port,
-        proto             => 'udp',
-        action            => 'ACCEPT',
-        order             => '200';
-    }
-  }
 }
 
 define ha::mcast($group, $port=694, $ttl=1) {
