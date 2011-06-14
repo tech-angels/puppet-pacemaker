@@ -61,24 +61,26 @@ $initdead="60"
     }
   }
 
-  case $operatingsystem {
-    # RHEL packages have this service bundled in with the heartbeat
-    # packages.
-    Debian,Ubuntu: {
-      service {
-        "logd":
-          ensure    => $use_logd ? {
-            on	=> running,
-            off	=> stopped,
-          },
-          hasstatus => true,
-          enable    => $use_logd ? {
-            on	=> true,
-            off	=> false,
-          },
-          require   => [Package["pacemaker"], Package["heartbeat"]];
+  if ($use_logd == 'on') {
+    case $operatingsystem {
+      # RHEL packages have this service bundled in with the heartbeat
+      # packages.
+      Debian,Ubuntu: {
+        service {
+          "logd":
+            ensure    => $use_logd ? {
+              on	=> running,
+              off	=> stopped,
+            },
+            hasstatus => true,
+            enable    => $use_logd ? {
+              on	=> true,
+              off	=> false,
+            },
+            require   => [Package["pacemaker"], Package["heartbeat"]];
+          }
         }
-      }
+    }
   }
   service {
     "heartbeat":
