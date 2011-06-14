@@ -67,9 +67,15 @@ $initdead="60"
     Debian,Ubuntu: {
       service {
         "logd":
-          ensure    => running,
+          ensure    => $use_logd ? {
+            on	=> running,
+            off	=> stopped,
+          },
           hasstatus => true,
-          enable    => true,
+          enable    => $use_logd ? {
+            on	=> true,
+            off	=> false,
+          },
           require   => [Package["pacemaker"], Package["heartbeat"]];
         }
       }
