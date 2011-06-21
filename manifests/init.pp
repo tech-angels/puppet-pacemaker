@@ -103,14 +103,15 @@ $initdead="60"
   # Create node in ha.cf for all nodes
   @@ha::node_entry {
     $hostname:
-      address	=> $ipaddress;
+      clustername	=> $name,
+      address		=> $ipaddress;
   } 
 
   # Collect nodes
-  Ha::Node_entry<<| |>>
+  Ha::Node_entry<<| clustername == $name |>>
 }
 
-define ha::node_entry($port='694', $address) {
+define ha::node_entry($clustername, $port='694', $address) {
   common::concatfilepart {
     "ha.cf-8-node-$name":
       file	=> '/etc/ha.d/ha.cf', 
