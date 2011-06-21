@@ -3,7 +3,7 @@ define ha::crm::rsc_defaults($value, $ignore_dc="false") {
     exec {
       "Setting rsc_defaults ${name} to ${value}":
         command => "/usr/sbin/crm -f - configure rsc_defaults ${name}=\"${value}\"",
-        unless  => "/usr/sbin/crm -f - configure show |grep rsc_defaults -A 1|grep ${name}=\"${value}\"";
+        unless  => "/usr/sbin/crm -f - configure show |grep rsc_defaults -A 100|grep ${name}=\\\"${value}\\\"";
     }
   }
 }
